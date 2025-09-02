@@ -152,7 +152,7 @@ if [[ ${EDX_REPO_HEALTH_BRANCH} == 'master' && -z ${REPORT_DATE} ]]; then
         done
     fi
 
-    git checkout master
+    git checkout akanshu/test_repo_health_workflow_call
     if git diff-index --quiet HEAD; then
         # No changes found in the working directory
         echo "No changes to commit"
@@ -163,7 +163,7 @@ if [[ ${EDX_REPO_HEALTH_BRANCH} == 'master' && -z ${REPORT_DATE} ]]; then
         git config --global user.name "Repo Health Bot"
         git config --global user.email "${GITHUB_USER_EMAIL}"
         git commit -m "${commit_message}"
-        git push origin master
+        git push origin akanshu/test_repo_health_workflow_call
     fi
 fi
 
