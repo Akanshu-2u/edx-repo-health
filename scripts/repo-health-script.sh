@@ -160,8 +160,8 @@ if [[ ${EDX_REPO_HEALTH_BRANCH} == 'master' && -z ${REPORT_DATE} ]]; then
         # Changes found in the working directory
         git add dashboards
         git add individual_repo_data
-        git config --global user.name "Repo Health Bot"
-        git config --global user.email "${GITHUB_USER_EMAIL}"
+        git config --global user.name "Akanshu-2u"
+        git config --global user.email "aaich-apphelix@2u.com"
         git commit -m "${commit_message}"
         git push origin akanshu/test_repo_health_workflow_call
     fi
