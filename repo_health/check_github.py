@@ -18,6 +18,8 @@ from .utils import github_org_repo, parse_build_duration_response
 logger = logging.getLogger(__name__)
 
 MODULE_DICT_KEY = "github"
+PY_VERSION_RE = re.compile(r"(?<!\d)([23]\.\d{1,2})(?!\d)")
+UBUNTU_VERSION_RE = re.compile(r"ubuntu-(\d+\.\d+)")
 
 FETCH_REPOSITORY_LANGUAGES = """
 query fetch_repository_languages ($repository_id: ID!, $cursor: String=null) {
@@ -87,7 +89,30 @@ async def fetch_languages(repo):
     return result
 
 
+def _unique_versions(values):
+    return sorted({value for value in values if value})
+
+
+def _extract_versions_from_check_names(checks_list):
+    python_versions = []
+    ubuntu_versions = []
+
+    for check in checks_list:
+        if not isinstance(check, dict):
+            continue
+        name = check.get("name")
+        if not isinstance(name, str):
+            continue
+
+        python_versions.extend(PY_VERSION_RE.findall(name))
+        ubuntu_versions.extend(UBUNTU_VERSION_RE.findall(name))
+
+    return _unique_versions(python_versions), _unique_versions(ubuntu_versions)
+
+
 @add_key_to_metadata((MODULE_DICT_KEY, "build_details"))
+@add_key_to_metadata((MODULE_DICT_KEY, "python_versions"))
+@add_key_to_metadata((MODULE_DICT_KEY, "ubuntu_versions"))
 @pytest.mark.asyncio
 @pytest.mark.edx_health
 async def check_build_duration(all_results, github_repo):
@@ -109,11 +134,15 @@ async def check_build_duration(all_results, github_repo):
     if parsed is None:  # uninitialized repo
         return
     total_duration, checks_list = parsed
+    python_versions, ubuntu_versions = _extract_versions_from_check_names(checks_list)
 
-    all_results[MODULE_DICT_KEY]['build_details'] = json.dumps({
+    results = all_results[MODULE_DICT_KEY]
+    results["build_details"] = json.dumps({
         'total_duration': total_duration,
         'checks': checks_list
     })
+    results["python_versions"] = python_versions
+    results["ubuntu_versions"] = ubuntu_versions
 
 # GitHub uses https://licensee.github.io/licensee/ to figure out the license of a git repository.
 # Unfortunately, some repositories set their license in a way that does not work with `licensee`.

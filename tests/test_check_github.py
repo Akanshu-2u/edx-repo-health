@@ -1,10 +1,10 @@
 """Testing functions in repo_health/check_github.py"""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from repo_health.check_github import MODULE_DICT_KEY, check_settings, repo_license_exemptions
+from repo_health.check_github import MODULE_DICT_KEY, check_build_duration, check_settings, repo_license_exemptions
 
 
 @pytest.mark.asyncio
@@ -54,3 +54,27 @@ async def test_check_settings_no_license_exemption_present():
 
     assert "license" in all_results["github"]
     assert all_results["github"]["license"] is None
+
+
+@pytest.mark.asyncio
+@patch("repo_health.check_github.parse_build_duration_response")
+async def test_check_build_duration_emits_versions(mock_parse):
+    all_results = {MODULE_DICT_KEY: {}}
+    github_repo_mock = AsyncMock()
+    github_repo_mock.return_value.object.id = 123
+    github_repo_mock.return_value.object.message = None
+    github_repo_mock.return_value.object.http.request = AsyncMock(return_value={})
+
+    mock_parse.return_value = (
+        "10 minutes 0 seconds",
+        [
+            {"name": "Tests (ubuntu-20.04, 3.8, needle)"},
+            {"name": "build (3.11)"},
+        ],
+    )
+
+    await check_build_duration(all_results, github_repo_mock())
+
+    assert all_results[MODULE_DICT_KEY]["python_versions"] == ["3.11", "3.8"]
+    assert all_results[MODULE_DICT_KEY]["ubuntu_versions"] == ["20.04"]
+    assert "build_details" in all_results[MODULE_DICT_KEY]

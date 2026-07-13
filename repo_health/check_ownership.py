@@ -45,7 +45,7 @@ def find_worksheet(google_creds_file, spreadsheet_url, worksheet_id):
     if not matching:
         raise KnownError(f"Cannot find a worksheet with ID {worksheet_id}")
     worksheet = matching[0]
-    expected_headers = ["repo url", "owner.theme", "owner.squad", "owner.priority"]
+    expected_headers = ["repo url", "owner.theme", "owner.squad", "owner.priority", "Repo Maintainer", "Openedx Maintainer (if forked)"]
     return worksheet.get_all_records(expected_headers=expected_headers)
 
 
@@ -61,7 +61,7 @@ def find_worksheet_with_actions(google_creds_file, spreadsheet_url, worksheet_id
     if not matching:
         raise KnownError(f"Cannot find a worksheet with ID {worksheet_id}")
     worksheet = matching[0]
-    expected_headers = ["repo url", "owner.theme", "owner.squad", "owner.priority"]
+    expected_headers = ["repo url", "owner.theme", "owner.squad", "owner.priority", "Repo Maintainer", "Openedx Maintainer (if forked)"]
     return worksheet.get_all_records(expected_headers=expected_headers)
 
 
@@ -114,6 +114,8 @@ def _catalog_owner(repo_path):
         "priority": "How critical is the component to edX?",
         "description": "Description of the what the component is",
         "notes": "Notes maintained by the owner",
+        "repo_maintainer": "Who maintains the repository (e.g., 2U, Community)",
+        "openedx_maintainer": "OpenEdX maintainer if repository is forked",
     },
 )
 @pytest.mark.edx_health
@@ -166,4 +168,6 @@ def check_ownership(all_results, git_origin_url, repo_path=None):
         results["theme"] = row["owner.theme"]
         results["squad"] = row["owner.squad"]
         results["priority"] = row["owner.priority"]
+        results["repo_maintainer"] = row.get("Repo Maintainer", "")
+        results["openedx_maintainer"] = row.get("Openedx Maintainer (if forked)", "")
         break
